@@ -1,0 +1,12 @@
+streamlit
+langchain
+langchain-community
+langchain-openai
+langchain-core
+langchain-chroma
+pysqlite3-binary
+pypdf
+langchain-text-splitters
+pandas
+sentence_transformers
+numpy
