@@ -309,10 +309,10 @@ def main():
                                 
                                     source = doc.metadata.get('source', '알 수 없음')
                                     raw_ans = doc.metadata.get('ans', '알 수 없음')
-                                    score = doc.metadata.get('score', None)
+                                    #score = doc.metadata.get('score', None)
                                     source_filename = os.path.basename(source)
                                 
-                                    st.markdown(f"👤 {source_filename} 📊 유사도: {score:.2f}")
+                                    st.markdown(f"👤 {source_filename}")
                                     st.html(raw_ans)
 
         except Exception as e:
