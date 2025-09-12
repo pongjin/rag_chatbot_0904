@@ -7,6 +7,7 @@ import streamlit.components.v1 as components
 import pandas as pd
 import json
 import numpy as np
+import sys
 
 # RAG 관련 imports
 from langchain_core.documents import Document
@@ -25,6 +26,13 @@ from langchain_core.embeddings import Embeddings
 import hashlib
 import shutil
 
+from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from langchain_chroma import Chroma   # ✅ Chroma import
+from langchain.schema import Document
+from langchain_core.runnables import Runnable
+
+from kiwipiepy import Kiwi
+
 # 파일 해시 생성
 def get_file_hash(uploaded_file):
     file_content = uploaded_file.read()
@@ -33,10 +41,8 @@ def get_file_hash(uploaded_file):
 
 # pysqlite3 패치
 __import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-from langchain_chroma import Chroma
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 
 # CSV 로딩 → 유저 단위로 문서 생성
@@ -106,52 +112,52 @@ def create_vector_store(file_path: str, cache_buster: str):
         collection_name=collection_name,
         persist_directory=None,
     )
-    return vectorstore
+    return vectorstore, split_docs  # split_docs도 함께 반환
 
-from langchain.schema import Document
-from langchain_core.runnables import Runnable
+# BM25 용 한국어 토크나이저
+kiwi = Kiwi()
 
-class ScoredRetriever(Runnable):
-    def __init__(self, vectorstore, k=10, score_threshold=0.1):
-        self.vectorstore = vectorstore
-        self.k = k
-        self.score_threshold = score_threshold  # ✅ 임계값 추가
-
-    def invoke(self, query, config=None):
-        docs_and_scores = self.vectorstore.similarity_search_with_relevance_scores(
-            query, k=self.k
-        )
-
-        filtered_docs = []
-        for doc, score in docs_and_scores:
-            doc.metadata["score"] = score
-            if score >= self.score_threshold:   # ✅ 0.1 이상만 남김
-                filtered_docs.append(doc)
-
-        return filtered_docs
+# Kiwi로 형태소만 추출하는 함수
+def tokenize(text):
+    # 첫 번째 분석 결과에서 형태소만 추출
+    return [morph for morph, pos, start, length in kiwi.analyze(text)[0][0]]
 
 # RAG 체인 초기화
 @st.cache_resource
 def initialize_components(file_path: str, selected_model: str, cache_buster: str):
-    vectorstore = create_vector_store(file_path, cache_buster)
+    vectorstore, split_docs = create_vector_store(file_path, cache_buster)
 
-    # 기존 retriever 대신 ScoredRetriever 사용
-    retriever = ScoredRetriever(vectorstore, k=10, score_threshold=0.1)
+    # BM25Retriever를 위한 텍스트 추출
+    unique_docs = [doc.page_content for doc in split_docs]
 
+    # BM25Retriever 생성 (원문 유지 + tokenizer 지정)
+    bm25_retriever = BM25Retriever.from_texts(
+        texts=unique_docs,              # 원문 그대로 넣음
+        preprocess_func=tokenize        # 검색 시에만 토큰화 적용
+    )
+    bm25_retriever.k = 20  # BM25Retriever의 검색 결과 개수를 20으로 설정
+
+    # Chroma retriever 생성
+    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
+    
+    # 앙상블 retriever 초기화
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, chroma_retriever],
+        weights=[0.2, 0.8],  # BM25: 20%, Chroma: 80%
+    )
+    
     contextualize_q_prompt = ChatPromptTemplate.from_messages([
         ("system", "이전 대화 내용을 반영해 현재 질문을 독립형 질문으로 바꿔줘."),
         MessagesPlaceholder("history"),
         ("human", "{input}"),
     ])
-
     qa_prompt = ChatPromptTemplate.from_messages([
         ("system", "다음 문서 내용을 참고하여 질문에 무조건 한국어로 답변해줘. 문서와 유사한 내용이 없으면 무조건 '관련된 내용이 없습니다'라고 말해줘. 꼭 이모지 써줘! 참고 문서는 아래에 보여줄 거야.\n\n{context}"),
         MessagesPlaceholder("history"),
         ("human", "{input}"),
     ])
-
     llm = ChatOpenAI(model=selected_model)
-    history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
+    history_aware_retriever = create_history_aware_retriever(llm, ensemble_retriever, contextualize_q_prompt)
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
