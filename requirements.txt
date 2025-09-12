@@ -10,3 +10,5 @@ langchain-text-splitters
 pandas
 sentence_transformers
 numpy
+kiwipiepy
+rank_bm25
