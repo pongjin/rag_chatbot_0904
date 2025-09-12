@@ -27,7 +27,7 @@ import hashlib
 import shutil
 
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
-from langchain_chroma import Chroma   # ✅ Chroma import
+
 from langchain.schema import Document
 from langchain_core.runnables import Runnable
 
@@ -41,8 +41,9 @@ def get_file_hash(uploaded_file):
 
 # pysqlite3 패치
 __import__('pysqlite3')
-
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
+from langchain_chroma import Chroma   # ✅ Chroma import
 os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 
 # CSV 로딩 → 유저 단위로 문서 생성
