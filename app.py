@@ -8,8 +8,6 @@ import pandas as pd
 import json
 import numpy as np
 import sys
-from wordcloud import WordCloud
-import plotly.express as px
 import matplotlib.pyplot as plt
 
 # RAG 관련 imports
@@ -248,41 +246,25 @@ def main():
                     st.metric("전체 청크 수", len(df))
 
             if has_mindmap_columns:
-                st.subheader("📋 전체 청크")
-                st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
-                no_filtered_df = df[["user_id","SPLITTED"]]
-                st.dataframe(
-                    no_filtered_df.set_index("user_id"),
-                    use_container_width=True,
-                )
-            
-            # 상위 10개 키워드 추출
-            df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
-            top10 = df_cnt.head(10)
+                
+                # 상위 10개 키워드 추출
+                df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
+                top10 = df_cnt.head(10)
+                
+                col1, col2 = st.columns([3, 1])  # 왼쪽이 3배 넓게
+                
+                with col1:
+                    st.subheader("📋 전체 청크")
+                    st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
+                    no_filtered_df = df[["user_id","SPLITTED"]]
+                    st.dataframe(
+                        no_filtered_df.set_index("user_id"),
+                        use_container_width=True,
+                    )
+                
+                with col2:
+                    st.dataframe(top10)
 
-            fig = px.scatter(
-                top10,
-                x="keyword",          # X축에 배치 (자동 카테고리)
-                y="user_id",          # Y축에 배치 (자동 수치)
-                size="user_id",       # 원 크기
-                color="keyword",      # 색상 키워드별 구분
-                text="keyword",       # 원 안에 키워드 표시
-                size_max=80,          # 최대 버블 크기
-                color_discrete_sequence=px.colors.qualitative.Set1
-            )
-            
-            # 레이아웃 조정
-            fig.update_traces(textposition="middle center", textfont_size=14)
-            fig.update_layout(
-                xaxis=dict(showgrid=False, zeroline=False, visible=False),
-                yaxis=dict(showgrid=False, zeroline=False, visible=False),
-                plot_bgcolor="white",
-                width=800,
-                height=600,
-                showlegend=False
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
             
             st.subheader("🤖 RAG 질의응답")
             st.text("청크를 근거로 유저의 질의에 응답하며, 응답에 사용된 청크를 확인할 수 있습니다.(최대 30개 까지 확인 가능)")
