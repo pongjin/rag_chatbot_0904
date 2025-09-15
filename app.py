@@ -123,12 +123,16 @@ def create_vector_store(file_path: str, cache_buster: str):
     return vectorstore, split_docs  # split_docs도 함께 반환
 
 # BM25 용 한국어 토크나이저
-kiwi = Kiwi()
+@st.cache_resource
+def get_kiwi():
+    return Kiwi()
+
+kiwi = get_kiwi()
 
 # Kiwi로 형태소만 추출하는 함수
 def tokenize(text):
     # 첫 번째 분석 결과에서 형태소만 추출
-    return [morph for morph, pos, start, length in kiwi.analyze(text)[0][0]]
+    return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
 
 # RAG 체인 초기화
 @st.cache_resource
@@ -140,10 +144,10 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
         documents=split_docs,         # Document 객체 리스트를 직접 전달
         preprocess_func=tokenize
     )
-    bm25_retriever.k = 20  # BM25Retriever의 검색 결과 개수를 20으로 설정
+    bm25_retriever.k = 15  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
     # Chroma retriever 생성
-    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
+    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
     
     # 앙상블 retriever 초기화
     ensemble_retriever = EnsembleRetriever(
@@ -170,8 +174,12 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
                     result.append(doc)
             return result
 
-    model = HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko")
-    compressor = CrossEncoderRerankerWithScore(model=model, top_n=40)
+    @st.cache_resource
+    def get_cross_encoder():
+        return HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko")
+    
+    model = get_cross_encoder()
+    compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=ensemble_retriever
     )
