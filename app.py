@@ -8,9 +8,12 @@ import pandas as pd
 import json
 import numpy as np
 import sys
-#from wordcloud import WordCloud
-import altair as alt
+from wordcloud import WordCloud
+#import altair as alt
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+# matplotlib에서 지원하는 기본 폰트 중 하나 사용
+rcParams['font.family'] = 'DejaVu Sans'  # streamlit cloud 기본 내장 폰트
 
 # RAG 관련 imports
 from langchain_core.documents import Document
@@ -260,23 +263,11 @@ def main():
             df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
             top10 = df_cnt.head(10)
 
-            chart = alt.Chart(top10).mark_circle().encode(
-                x=alt.X("keyword:N", title="키워드"),
-                y=alt.Y("user_id:Q", title="응답자 수"),
-                size="user_id:Q",
-                color="user_id:Q",
-                tooltip=["keyword", "user_id"]
-            ).properties(width=600, height=400)
-            
-            st.altair_chart(chart, use_container_width=True)
-
-            """
             # 워드클라우드용 dict 생성 (key=키워드, value=응답자 수)
             word_freq = dict(zip(top10["keyword"], top10["user_id"]))
             
             # 워드클라우드 생성
             wc = WordCloud(
-                font_path="NanumGothic.ttf",  # 한글 지원 폰트 (환경에 맞게 변경)
                 width=800, 
                 height=400, 
                 background_color="white"
@@ -288,7 +279,6 @@ def main():
             ax.imshow(wc, interpolation="bilinear")
             ax.axis("off")
             st.pyplot(fig)
-            """
             
             st.subheader("🤖 RAG 질의응답")
             st.text("청크를 근거로 유저의 질의에 응답하며, 응답에 사용된 청크를 확인할 수 있습니다.(최대 30개 까지 확인 가능)")
