@@ -301,33 +301,7 @@ def main():
 
             if len(chat_history.messages) == 0:
                 chat_history.add_ai_message("업로드된 유저 응답 기반으로 무엇이든 물어보세요! 🤗")
-            
-            if prompt_message := st.chat_input("질문을 입력하세요"):
-                st.chat_message("human").write(prompt_message)
-                with st.chat_message("ai"):
-                    with st.spinner("생각 중입니다..."):
-            
-                        response = conversational_rag_chain.invoke(
-                            {"input": prompt_message},
-                            config,
-                        )
-                        answer = response['answer']
-            
-                        # Document 객체를 직렬화 가능한 dict로 변환
-                        context = []
-                        if "관련된 내용이 없습니다" not in answer and response.get("context"):
-                            for doc in response["context"]:
-                                context.append({
-                                    "source": doc.metadata.get("source", "알 수 없음"),
-                                    "ans": doc.metadata.get("ans", "알 수 없음"),
-                                    "page_content": doc.page_content
-                                })
-            
-                        # JSON으로 직렬화해서 저장
-                        chat_history.add_ai_message(
-                            json.dumps({"answer": answer, "context": context}, ensure_ascii=False)
-                        )
-            
+
             # 히스토리 출력
             for msg in chat_history.messages:
                 if msg.type == "human":
@@ -349,6 +323,32 @@ def main():
                                     st.html(doc["ans"])
                     except json.JSONDecodeError:
                         st.chat_message("ai").write(msg.content)
+            
+            if prompt_message := st.chat_input("질문을 입력하세요"):
+                #st.chat_message("human").write(prompt_message)
+                #with st.chat_message("ai"):
+                with st.spinner("생각 중입니다..."):
+            
+                    response = conversational_rag_chain.invoke(
+                        {"input": prompt_message},
+                        config,
+                    )
+                    answer = response['answer']
+        
+                    # Document 객체를 직렬화 가능한 dict로 변환
+                    context = []
+                    if "관련된 내용이 없습니다" not in answer and response.get("context"):
+                        for doc in response["context"]:
+                            context.append({
+                                "source": doc.metadata.get("source", "알 수 없음"),
+                                "ans": doc.metadata.get("ans", "알 수 없음"),
+                                "page_content": doc.page_content
+                            })
+        
+                    # JSON으로 직렬화해서 저장
+                    chat_history.add_ai_message(
+                        json.dumps({"answer": answer, "context": context}, ensure_ascii=False)
+                    )
 
         except Exception as e:
             st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
