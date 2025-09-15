@@ -270,7 +270,7 @@ def main():
                     ).generate_from_frequencies(dict(zip(top10['keyword'], top10['user_id'])))
                     
                     # 시각화
-                    fig, ax = plt.subplots(figsize=(3, 2))
+                    fig, ax = plt.subplots(figsize=(2, 1))
                     ax.imshow(wc, interpolation='bilinear')
                     ax.axis('off')
                     st.pyplot(fig, use_container_width=False)
