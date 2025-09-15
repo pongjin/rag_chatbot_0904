@@ -316,6 +316,10 @@ def main():
             for msg in chat_history.messages:
                 st.chat_message(msg.type).write(msg.content)
 
+            # --- QA 히스토리 초기화 ---
+            if "qa_history" not in st.session_state:
+                st.session_state["qa_history"] = []
+            
             if prompt_message := st.chat_input("질문을 입력하세요"):
                 st.chat_message("human").write(prompt_message)
                 with st.chat_message("ai"):
@@ -328,22 +332,37 @@ def main():
                         answer = response['answer']
                         st.write(answer)
 
-                        if "관련된 내용이 없습니다" not in answer and response.get("context"):
-                            with st.expander("참고 문서 확인"):
-                                seen = set()
-                                for doc in response['context']:
-                                    key = (doc.metadata.get("source"), doc.page_content)
-                                    if key in seen:
-                                        continue
-                                    seen.add(key)
-                                
-                                    source = doc.metadata.get('source', '알 수 없음')
-                                    raw_ans = doc.metadata.get('ans', '알 수 없음')
-                                    #score = doc.metadata.get('score', None)
-                                    source_filename = os.path.basename(source)
-                                
-                                    st.markdown(f"👤 {source_filename}")
-                                    st.html(raw_ans)
+                        # 질문/답변/참고 문서를 세션 상태에 저장
+                        st.session_state["qa_history"].append({
+                            "question": prompt_message,
+                            "answer": answer,
+                            "context": response.get("context", [])
+                        })
+                        
+            # --- 질문별 QA 출력 ---
+            for idx, qa in enumerate(st.session_state["qa_history"], 1):
+                st.markdown(f"### ❓ 질문 {idx}: {qa['question']}")
+                st.markdown(f"**💡 답변:** {qa['answer']}")
+            
+                if "관련된 내용이 없습니다" not in qa['answer'] and qa["context"]:
+                    with st.expander(f"📚 질문 {idx} 참고 문서 확인"):
+                        seen = set()
+                        for doc in qa["context"]:
+                            key = (doc.metadata.get("source"), doc.page_content)
+                            if key in seen:
+                                continue
+                            seen.add(key)
+            
+                            source = doc.metadata.get('source', '알 수 없음')
+                            raw_ans = doc.metadata.get('ans', '알 수 없음')
+                            source_filename = os.path.basename(source)
+            
+                            st.markdown(f"👤 {source_filename}")
+                            st.html(raw_ans)
+
+        except Exception as e:
+            st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
+            st.exception(e)
 
         except Exception as e:
             st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
