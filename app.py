@@ -8,7 +8,6 @@ import pandas as pd
 import json
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
 
 # RAG 관련 imports
 from langchain_core.documents import Document
