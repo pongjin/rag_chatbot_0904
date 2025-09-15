@@ -248,13 +248,14 @@ def main():
                 
                 # 상위 10개 키워드 추출
                 df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
-                top10 = df_cnt.head(10)
-                
+                top10 = df_cnt[df_cnt.keyword != '없음'].head(10)
+
+                st.subheader("📋 전체 청크")
+                st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
                 col1, col2 = st.columns([3, 1])  # 왼쪽이 3배 넓게
                 
                 with col1:
-                    st.subheader("📋 전체 청크")
-                    st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
+
                     no_filtered_df = df[["user_id","SPLITTED"]]
                     st.dataframe(
                         no_filtered_df.set_index("user_id"),
