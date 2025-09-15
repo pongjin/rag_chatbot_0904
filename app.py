@@ -295,62 +295,51 @@ def main():
                 output_messages_key="answer",
             )
 
-            # 채팅 초기화/새 세션 시작 버튼
-            btn_col1, btn_col2 = st.columns([1, 1])
-            with btn_col1:
-                if st.button("채팅 히스토리 지우기", use_container_width=True):
-                    chat_history.clear()  # 현재 세션의 메시지 비움
-                    st.rerun()
-            
-            with btn_col2:
-                if st.button("새 채팅 시작", use_container_width=True):
-                    st.session_state["chat_session_nonce"] += 1  # 새 세션
-                    # 메모리에 남아있는 현재 키 정리(선택)
-                    if chat_history_key in st.session_state:
-                        del st.session_state[chat_history_key]
-                    st.rerun()
-
+            if st.button("채팅 히스토리 지우기", use_container_width=True):
+                chat_history.clear()  # 현재 세션의 메시지 비움
+                st.rerun()
 
             if len(chat_history.messages) == 0:
                 chat_history.add_ai_message("업로드된 유저 응답 기반으로 무엇이든 물어보세요! 🤗")
-
+            
             for msg in chat_history.messages:
                 st.chat_message(msg.type).write(msg.content)
-
+            
             if prompt_message := st.chat_input("질문을 입력하세요"):
                 st.chat_message("human").write(prompt_message)
                 with st.chat_message("ai"):
                     with st.spinner("생각 중입니다..."):
-            
+                
                         response = conversational_rag_chain.invoke(
                             {"input": prompt_message},
                             config,
                         )
                         answer = response['answer']
-            
+                
                         # 참고 문서 조건부 저장
                         context = []
                         if "관련된 내용이 없습니다" not in answer and response.get("context"):
                             context = response["context"]
             
-                        chat_history.add_ai_message({
-                            "answer": answer,
-                            "context": context
-                        })
+                        # JSON 문자열로 직렬화해서 저장
+                        chat_history.add_ai_message(
+                            json.dumps({"answer": answer, "context": context}, ensure_ascii=False)
+                        )
             
             # 히스토리 출력
             for msg in chat_history.messages:
                 if msg.type == "human":
                     st.chat_message("human").write(msg.content)
                 elif msg.type == "ai":
-                    if isinstance(msg.content, dict):
-                        st.chat_message("ai").write(msg.content["answer"])
-                        
+                    try:
+                        content = json.loads(msg.content)
+                        st.chat_message("ai").write(content["answer"])
+            
                         # 조건부 출력
-                        if msg.content.get("context"):
+                        if content.get("context"):
                             with st.expander("참고 문서 확인", expanded=False):
                                 seen = set()
-                                for doc in msg.content["context"]:
+                                for doc in content["context"]:
                                     key = (doc.metadata.get("source"), doc.page_content)
                                     if key in seen:
                                         continue
@@ -360,7 +349,8 @@ def main():
                                     source_filename = os.path.basename(source)
                                     st.markdown(f"👤 {source_filename}")
                                     st.html(raw_ans)
-                    else:
+                    except json.JSONDecodeError:
+                        # 단순 문자열일 경우
                         st.chat_message("ai").write(msg.content)
 
         except Exception as e:
