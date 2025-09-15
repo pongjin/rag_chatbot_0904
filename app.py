@@ -309,19 +309,24 @@ def main():
                 st.chat_message("human").write(prompt_message)
                 with st.chat_message("ai"):
                     with st.spinner("생각 중입니다..."):
-                
+            
                         response = conversational_rag_chain.invoke(
                             {"input": prompt_message},
                             config,
                         )
                         answer = response['answer']
-                
-                        # 참고 문서 조건부 저장
+            
+                        # Document 객체를 직렬화 가능한 dict로 변환
                         context = []
                         if "관련된 내용이 없습니다" not in answer and response.get("context"):
-                            context = response["context"]
+                            for doc in response["context"]:
+                                context.append({
+                                    "source": doc.metadata.get("source", "알 수 없음"),
+                                    "ans": doc.metadata.get("ans", "알 수 없음"),
+                                    "page_content": doc.page_content
+                                })
             
-                        # JSON 문자열로 직렬화해서 저장
+                        # JSON으로 직렬화해서 저장
                         chat_history.add_ai_message(
                             json.dumps({"answer": answer, "context": context}, ensure_ascii=False)
                         )
@@ -335,22 +340,17 @@ def main():
                         content = json.loads(msg.content)
                         st.chat_message("ai").write(content["answer"])
             
-                        # 조건부 출력
                         if content.get("context"):
                             with st.expander("참고 문서 확인", expanded=False):
                                 seen = set()
                                 for doc in content["context"]:
-                                    key = (doc.metadata.get("source"), doc.page_content)
+                                    key = (doc["source"], doc["page_content"])
                                     if key in seen:
                                         continue
                                     seen.add(key)
-                                    source = doc.metadata.get('source', '알 수 없음')
-                                    raw_ans = doc.metadata.get('ans', '알 수 없음')
-                                    source_filename = os.path.basename(source)
-                                    st.markdown(f"👤 {source_filename}")
-                                    st.html(raw_ans)
+                                    st.markdown(f"👤 {doc['source']}")
+                                    st.html(doc["ans"])
                     except json.JSONDecodeError:
-                        # 단순 문자열일 경우
                         st.chat_message("ai").write(msg.content)
 
         except Exception as e:
