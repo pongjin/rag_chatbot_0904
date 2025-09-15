@@ -309,7 +309,7 @@ def main():
                 elif msg.type == "ai":
                     try:
                         content = json.loads(msg.content)
-                        st.chat_message("ai").write(content["answer"])
+                        st.chat_message("assistant").write(content["answer"])
             
                         if content.get("context"):
                             with st.expander("참고 문서 확인", expanded=False):
