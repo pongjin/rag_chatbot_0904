@@ -9,11 +9,8 @@ import json
 import numpy as np
 import sys
 from wordcloud import WordCloud
-#import altair as alt
+import plotly.express as px
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
-# matplotlib에서 지원하는 기본 폰트 중 하나 사용
-rcParams['font.family'] = 'DejaVu Sans'  # streamlit cloud 기본 내장 폰트
 
 # RAG 관련 imports
 from langchain_core.documents import Document
@@ -263,22 +260,29 @@ def main():
             df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
             top10 = df_cnt.head(10)
 
-            # 워드클라우드용 dict 생성 (key=키워드, value=응답자 수)
-            word_freq = dict(zip(top10["keyword"], top10["user_id"]))
+            fig = px.scatter(
+                top10,
+                x="keyword",          # X축에 배치 (자동 카테고리)
+                y="user_id",          # Y축에 배치 (자동 수치)
+                size="user_id",       # 원 크기
+                color="keyword",      # 색상 키워드별 구분
+                text="keyword",       # 원 안에 키워드 표시
+                size_max=80,          # 최대 버블 크기
+                color_discrete_sequence=px.colors.qualitative.Set1
+            )
             
-            # 워드클라우드 생성
-            wc = WordCloud(
-                width=800, 
-                height=400, 
-                background_color="white"
-            ).generate_from_frequencies(word_freq)
+            # 레이아웃 조정
+            fig.update_traces(textposition="middle center", textfont_size=14)
+            fig.update_layout(
+                xaxis=dict(showgrid=False, zeroline=False, visible=False),
+                yaxis=dict(showgrid=False, zeroline=False, visible=False),
+                plot_bgcolor="white",
+                width=800,
+                height=600,
+                showlegend=False
+            )
             
-            # Streamlit에 출력
-            st.subheader("☁️ 주로 등장하는 키워드")
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.imshow(wc, interpolation="bilinear")
-            ax.axis("off")
-            st.pyplot(fig)
+            st.plotly_chart(fig, use_container_width=True)
             
             st.subheader("🤖 RAG 질의응답")
             st.text("청크를 근거로 유저의 질의에 응답하며, 응답에 사용된 청크를 확인할 수 있습니다.(최대 30개 까지 확인 가능)")
