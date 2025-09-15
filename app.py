@@ -265,9 +265,9 @@ def main():
                     )
                 
                 with col2:
-                    # Noto Sans KR (Google Fonts) 다운로드
-                    url = "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR-Regular.otf"
-                    font_path = "NotoSansKR-Regular.otf"
+                    # Noto Sans KR (TTF 버전) 다운로드
+                    url = "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR-Regular.ttf"
+                    font_path = "NotoSansKR-Regular.ttf"
                     
                     if not os.path.exists(font_path):
                         r = requests.get(url)
