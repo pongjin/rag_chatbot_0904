@@ -273,7 +273,7 @@ def main():
                     fig, ax = plt.subplots(figsize=(3, 2))
                     ax.imshow(wc, interpolation='bilinear')
                     ax.axis('off')
-                    st.pyplot(fig)
+                    st.pyplot(fig, use_container_width=False)
 
             if has_mindmap_columns:
 
