@@ -277,9 +277,13 @@ def main():
                     # 파일 크기 확인 (정상적으로 받았는지 체크)
                     st.text(os.path.getsize(font_path))
                     
-                    # 워드클라우드 생성
                     text = "안녕하세요 스트림릿 클라우드에서 한글 워드클라우드 테스트 중입니다."
-                    wc = WordCloud(font_path=font_path, background_color="white", width=800, height=400).generate(text)
+                    wc = WordCloud(
+                        font_path=font_path, 
+                        background_color="white", 
+                        width=800, 
+                        height=400
+                    ).generate(text)
                     
                     plt.imshow(wc, interpolation="bilinear")
                     plt.axis("off")
