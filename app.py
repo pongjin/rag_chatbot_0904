@@ -322,7 +322,7 @@ def main():
                             for doc in response["context"]:
                                 context.append({
                                     "source": doc.metadata.get("source", "알 수 없음"),
-                                    "ans": doc.metadata.get("ans", "알 수 없음"),
+                                    #"ans": doc.metadata.get("ans", "알 수 없음"),
                                     "page_content": doc.page_content
                                 })
             
@@ -349,7 +349,8 @@ def main():
                                         continue
                                     seen.add(key)
                                     st.markdown(f"👤 {doc['source']}")
-                                    st.html(doc["ans"])
+                                    #st.html(doc["ans"])
+                                    st.write(doc["page_content"])
                     except json.JSONDecodeError:
                         st.chat_message("ai").write(msg.content)
 
