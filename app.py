@@ -241,30 +241,15 @@ def main():
             
             if has_mindmap_columns:
                 # 기본 정보 메트릭
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("전체 응답 수", df.user_id.nunique())
                 with col2:
                     st.metric("전체 청크 수", len(df))
-
-            if has_mindmap_columns:
-                
-                # 상위 10개 키워드 추출
-                df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
-                top10 = df_cnt[df_cnt.keyword != '없음'].head(10)
-
-                st.subheader("📋 전체 청크")
-                col1, col2 = st.columns([4, 1])  # 왼쪽이 3배 넓게
-                
-                with col1:
-                    st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
-                    no_filtered_df = df[["user_id","SPLITTED"]]
-                    st.dataframe(
-                        no_filtered_df.set_index("user_id"),
-                        use_container_width=True,
-                    )
-                
-                with col2:
+                with col3:
+                    # 상위 10개 키워드 추출
+                    df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
+                    top10 = df_cnt[df_cnt.keyword != '없음'].head(10)
                     # Noto Sans KR (TTF 버전) 다운로드
                     url = "https://github.com/moonspam/NanumSquare/raw/master/NanumSquareR.ttf"
                     font_path = "NanumSquare.ttf"
@@ -290,6 +275,16 @@ def main():
                     ax.axis('off')
                     
                     st.pyplot(fig)
+
+            if has_mindmap_columns:
+
+                st.subheader("📋 전체 청크")
+                st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
+                no_filtered_df = df[["user_id","SPLITTED"]]
+                st.dataframe(
+                    no_filtered_df.set_index("user_id"),
+                    use_container_width=True,
+                )
 
             
             st.subheader("🤖 RAG 질의응답")
