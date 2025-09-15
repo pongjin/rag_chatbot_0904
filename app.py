@@ -310,16 +310,13 @@ def main():
                         del st.session_state[chat_history_key]
                     st.rerun()
 
+
             if len(chat_history.messages) == 0:
                 chat_history.add_ai_message("업로드된 유저 응답 기반으로 무엇이든 물어보세요! 🤗")
 
             for msg in chat_history.messages:
                 st.chat_message(msg.type).write(msg.content)
 
-            # --- QA 히스토리 초기화 ---
-            if "qa_history" not in st.session_state:
-                st.session_state["qa_history"] = []
-            
             if prompt_message := st.chat_input("질문을 입력하세요"):
                 st.chat_message("human").write(prompt_message)
                 with st.chat_message("ai"):
@@ -332,37 +329,22 @@ def main():
                         answer = response['answer']
                         st.write(answer)
 
-                        # 질문/답변/참고 문서를 세션 상태에 저장
-                        st.session_state["qa_history"].append({
-                            "question": prompt_message,
-                            "answer": answer,
-                            "context": response.get("context", [])
-                        })
-                        
-            # --- 질문별 QA 출력 ---
-            for idx, qa in enumerate(st.session_state["qa_history"], 1):
-                st.markdown(f"### ❓ 질문 {idx}: {qa['question']}")
-                st.markdown(f"**💡 답변:** {qa['answer']}")
-            
-                if "관련된 내용이 없습니다" not in qa['answer'] and qa["context"]:
-                    with st.expander(f"📚 질문 {idx} 참고 문서 확인"):
-                        seen = set()
-                        for doc in qa["context"]:
-                            key = (doc.metadata.get("source"), doc.page_content)
-                            if key in seen:
-                                continue
-                            seen.add(key)
-            
-                            source = doc.metadata.get('source', '알 수 없음')
-                            raw_ans = doc.metadata.get('ans', '알 수 없음')
-                            source_filename = os.path.basename(source)
-            
-                            st.markdown(f"👤 {source_filename}")
-                            st.html(raw_ans)
-
-        except Exception as e:
-            st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
-            st.exception(e)
+                        if "관련된 내용이 없습니다" not in answer and response.get("context"):
+                            with st.expander("참고 문서 확인"):
+                                seen = set()
+                                for doc in response['context']:
+                                    key = (doc.metadata.get("source"), doc.page_content)
+                                    if key in seen:
+                                        continue
+                                    seen.add(key)
+                                
+                                    source = doc.metadata.get('source', '알 수 없음')
+                                    raw_ans = doc.metadata.get('ans', '알 수 없음')
+                                    #score = doc.metadata.get('score', None)
+                                    source_filename = os.path.basename(source)
+                                
+                                    st.markdown(f"👤 {source_filename}")
+                                    st.html(raw_ans)
 
         except Exception as e:
             st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
@@ -371,50 +353,6 @@ def main():
     else:
         # 샘플 정보 표시
         col1, col2 = st.columns([1, 1])
-
-        with col1:
-            st.info("💡 CSV 파일을 업로드하면 4단계 하이브리드 마인드맵과 RAG 챗봇을 사용할 수 있습니다.")
-
-            with st.expander("🌳 4단계 하이브리드 마인드맵의 특징"):
-                st.markdown("""
-                **🏗️ 4단계 트리 + Force 구조**
-                - 메인 주제가 왼쪽에 위치
-                - 상위개념(name)이 첫 번째 확장
-                - 키워드들이 두 번째 확장 
-                - 요약들이 세 번째 확장
-                - Force Simulation으로 겹침 방지
-                
-                **🎯 인터랙션**  
-                - 메인 주제 클릭 → 모든 상위개념 표시
-                - 상위개념 클릭 → 해당 키워드들 표시
-                - 키워드 클릭 → 해당 요약들 표시
-                - 드래그로 노드 자유 이동
-                - 트리 복원으로 언제든 원래 형태 복귀
-                - 물리엔진 토글로 겹침 방지 제어
-                """)
-
-        with col2:
-            with st.expander("📋 CSV 파일 형식 요구사항 (4단계)"):
-                st.markdown("""
-                **마인드맵용 (필수):**
-                ```
-                user_id, total_cl, name, keywords, summary
-                user001, 1, "제품품질", "품질", "제품이 만족스럽다"
-                user002, 2, "가격정책", "가격", "가격이 합리적이다"
-                user003, 99, "", "", "무효 응답"
-                ```
-                
-                **RAG 챗봇용 (추가 필요):**
-                ```
-                SPLITTED, highlighted_ans
-                "제품에 대한 상세한 의견...", "원본 응답..."
-                "서비스 경험에 대한 설명...", "원본 응답..."
-                ```
-                
-                **4단계 구조**: 메인 → 상위개념(name) → 키워드 → 요약
-                * total_cl != 99 인 데이터만 마인드맵에 사용됩니다
-                * 모든 기능을 사용하려면 모든 컬럼이 필요합니다
-                """)
 
 if st.button("🔄 새로고침 버튼을 누르세요"):
     st.cache_resource.clear()
