@@ -165,7 +165,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
             result = []
             for doc, score in docs_with_scores[: self.top_n]:
                 # 👇 [수정] 점수가 0.0010을 넘는 문서만 결과에 추가하도록 수정
-                if score > 0.0005:
+                if score > 0.01:
                     doc.metadata["relevance_score"] = score
                     result.append(doc)
             return result
