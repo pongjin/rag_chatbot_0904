@@ -12,4 +12,3 @@ sentence_transformers
 numpy
 kiwipiepy
 rank_bm25
-plotly
