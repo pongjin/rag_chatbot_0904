@@ -212,7 +212,7 @@ def main():
     uploaded_file = st.file_uploader(
         "CSV 파일을 업로드하세요. 새롭게 파일을 넣는 경우, 좌측 상단 새로고침 버튼을 누르세요", 
         type=['csv'],
-        help="user_id, total_cl, name, keywords, summary, SPLITTED 컬럼 필요"
+        help="user_id, SPLITTED, highlighted_ans 컬럼 필요"
     )
 
     if uploaded_file is not None:
@@ -221,12 +221,12 @@ def main():
             df = pd.read_csv(uploaded_file)
 
             # 컬럼 확인 (name 컬럼 추가)
-            mindmap_columns = ['user_id', 'total_cl', 'name', 'keywords', 'summary', 'SPLITTED']
+            mindmap_columns = ['user_id','highlighted_ans', 'SPLITTED']
             has_mindmap_columns = all(col in df.columns for col in mindmap_columns)
 
             if not has_mindmap_columns:
                 st.error("마인드맵 또는 RAG 기능을 위한 필수 컬럼이 없습니다.")
-                st.info("user_id, total_cl, name, keywords, summary, SPLITTED")
+                st.info("user_id, SPLITTED, highlighted_ans")
                 st.stop()
 
             
@@ -327,7 +327,7 @@ def main():
             if prompt_message := st.chat_input("질문을 입력하세요"):
                 #st.chat_message("human").write(prompt_message)
                 #with st.chat_message("ai"):
-                with st.spinner("생각 중입니다..."):
+                with st.spinner(f"{prompt_message} 응답 생성중..."):
 
                     # 사용자 메시지 먼저 추가
                     chat_history.add_user_message(prompt_message)
