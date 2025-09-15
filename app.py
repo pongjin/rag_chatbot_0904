@@ -212,7 +212,7 @@ def main():
 
     # 파일 업로드
     if "uploader_key" not in st.session_state:
-    st.session_state["uploader_key"] = 0
+        st.session_state["uploader_key"] = 0
     
     uploaded_file = st.file_uploader(
         "CSV 파일을 업로드하세요. 새롭게 파일을 넣는 경우, 좌측 상단 새로고침 버튼을 누르세요", 
