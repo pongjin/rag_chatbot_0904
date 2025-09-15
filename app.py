@@ -8,7 +8,8 @@ import pandas as pd
 import json
 import numpy as np
 import sys
-from wordcloud import WordCloud
+#from wordcloud import WordCloud
+import altair as alt
 import matplotlib.pyplot as plt
 
 # RAG 관련 imports
@@ -258,7 +259,18 @@ def main():
             # 상위 10개 키워드 추출
             df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
             top10 = df_cnt.head(10)
+
+            chart = alt.Chart(top10).mark_circle().encode(
+                x=alt.X("keyword:N", title="키워드"),
+                y=alt.Y("user_id:Q", title="응답자 수"),
+                size="user_id:Q",
+                color="user_id:Q",
+                tooltip=["keyword", "user_id"]
+            ).properties(width=600, height=400)
             
+            st.altair_chart(chart, use_container_width=True)
+
+            """
             # 워드클라우드용 dict 생성 (key=키워드, value=응답자 수)
             word_freq = dict(zip(top10["keyword"], top10["user_id"]))
             
@@ -276,6 +288,7 @@ def main():
             ax.imshow(wc, interpolation="bilinear")
             ax.axis("off")
             st.pyplot(fig)
+            """
             
             st.subheader("🤖 RAG 질의응답")
             st.text("청크를 근거로 유저의 질의에 응답하며, 응답에 사용된 청크를 확인할 수 있습니다.(최대 30개 까지 확인 가능)")
