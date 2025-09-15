@@ -132,6 +132,7 @@ kiwi = get_kiwi()
 # Kiwi로 형태소만 추출하는 함수
 def tokenize(text):
     # 첫 번째 분석 결과에서 형태소만 추출
+    result = kiwi.analyze(text)[0][0]
     return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
 
 # RAG 체인 초기화
