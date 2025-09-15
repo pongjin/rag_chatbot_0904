@@ -13,3 +13,4 @@ numpy
 kiwipiepy
 rank_bm25
 matplotlib
+wordcloud
