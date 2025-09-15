@@ -349,6 +349,8 @@ def main():
                     chat_history.add_ai_message(
                         json.dumps({"answer": answer, "context": context}, ensure_ascii=False)
                     )
+                    
+                    st.rerun()
 
         except Exception as e:
             st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
