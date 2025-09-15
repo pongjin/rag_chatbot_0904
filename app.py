@@ -254,6 +254,12 @@ def main():
                 col1, col2 = st.columns([4, 1])  # 왼쪽이 3배 넓게
                 
                 with col1:
+                    import matplotlib.font_manager as fm
+
+                    # 사용 가능한 폰트 리스트 출력
+                    for f in fm.fontManager.ttflist:
+                        if "Nanum" in f.name or "Gothic" in f.name or "Apple" in f.name:
+                            print(f.name)
                     st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
                     no_filtered_df = df[["user_id","SPLITTED"]]
                     st.dataframe(
