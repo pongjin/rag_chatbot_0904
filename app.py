@@ -8,6 +8,8 @@ import pandas as pd
 import json
 import numpy as np
 import sys
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 # RAG 관련 imports
 from langchain_core.documents import Document
@@ -209,10 +211,14 @@ def main():
     st.markdown("---")
 
     # 파일 업로드
+    if "uploader_key" not in st.session_state:
+    st.session_state["uploader_key"] = 0
+    
     uploaded_file = st.file_uploader(
         "CSV 파일을 업로드하세요. 새롭게 파일을 넣는 경우, 좌측 상단 새로고침 버튼을 누르세요", 
         type=['csv'],
-        help="user_id, SPLITTED, highlighted_ans 컬럼 필요"
+        help="user_id, SPLITTED, highlighted_ans 컬럼 필요",
+        key=f"file_uploader_{st.session_state['uploader_key']}"  # ✅ 세션 키 적용
     )
 
     if uploaded_file is not None:
@@ -242,18 +248,39 @@ def main():
                     st.metric("전체 청크 수", len(df))
 
             if has_mindmap_columns:
-                # Summary Table (4단계 구조)
-                st.subheader("📋 키워드 미분류 청크")
-                st.text("키워드로 분류되지 않은 청크들을 확인할 수 있습니다.(테이블 우측 상단 다운로드 가능)")
+                st.subheader("📋 전체 청크")
+                st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
                 no_filtered_df = df[["user_id","SPLITTED"]]
                 st.dataframe(
                     no_filtered_df.set_index("user_id"),
                     use_container_width=True,
                 )
-
+            
+            # 상위 10개 키워드 추출
+            df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
+            top10 = df_cnt.head(10)
+            
+            # 워드클라우드용 dict 생성 (key=키워드, value=응답자 수)
+            word_freq = dict(zip(top10["keyword"], top10["user_id"]))
+            
+            # 워드클라우드 생성
+            wc = WordCloud(
+                font_path="NanumGothic.ttf",  # 한글 지원 폰트 (환경에 맞게 변경)
+                width=800, 
+                height=400, 
+                background_color="white"
+            ).generate_from_frequencies(word_freq)
+            
+            # Streamlit에 출력
+            st.subheader("☁️ 주로 등장하는 키워드")
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.imshow(wc, interpolation="bilinear")
+            ax.axis("off")
+            st.pyplot(fig)
+            
             st.subheader("🤖 RAG 질의응답")
-            st.text("청크를 근거로 유저의 질의에 응답하며, 응답에 사용된 청크를 확인할 수 있습니다.(현재 상위 10개만 확인 가능)")
-            st.markdown("RAG 구축 간 시간이 소요됩니다.(약 N분)")
+            st.text("청크를 근거로 유저의 질의에 응답하며, 응답에 사용된 청크를 확인할 수 있습니다.(최대 30개 까지 확인 가능)")
+            st.markdown("청크 크기에 따라 RAG 구축 시간이 소요됩니다.(약 N분)")
             
             file_hash = get_file_hash(uploaded_file)
 
@@ -385,6 +412,9 @@ if st.button("🔄 새로고침 (모든 기록 삭제)"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
 
+    # 4. 파일 업로더 키 갱신 → 업로드 표시 지움
+    st.session_state["uploader_key"] = st.session_state.get("uploader_key", 0) + 1  
+    
     st.success("✅ 모든 캐시와 채팅 기록이 초기화되었습니다!")
     st.rerun()
 
