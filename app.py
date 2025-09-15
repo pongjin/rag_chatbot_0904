@@ -265,8 +265,8 @@ def main():
                     wc = WordCloud(
                         font_path=font_path, 
                         background_color="white", 
-                        width=800, 
-                        height=400
+                        width=200, 
+                        height=200
                     ).generate_from_frequencies(dict(zip(top10['keyword'], top10['user_id'])))
                     
                     # 시각화
