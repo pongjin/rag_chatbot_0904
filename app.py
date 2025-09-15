@@ -302,8 +302,8 @@ def main():
             if len(chat_history.messages) == 0:
                 chat_history.add_ai_message("업로드된 유저 응답 기반으로 무엇이든 물어보세요! 🤗")
             
-            for msg in chat_history.messages:
-                st.chat_message(msg.type).write(msg.content)
+            #for msg in chat_history.messages:
+            #    st.chat_message(msg.type).write(msg.content)
             
             if prompt_message := st.chat_input("질문을 입력하세요"):
                 st.chat_message("human").write(prompt_message)
