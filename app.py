@@ -266,13 +266,16 @@ def main():
                 
                 with col2:
                     # Noto Sans KR (TTF 버전) 다운로드
-                    url = "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR-Regular.ttf"
-                    font_path = "NotoSansKR-Regular.ttf"
+                    url = "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR-Regular.otf"
+                    font_path = "NotoSansKR-Regular.otf"
                     
                     if not os.path.exists(font_path):
                         r = requests.get(url)
                         with open(font_path, "wb") as f:
                             f.write(r.content)
+                    
+                    # 파일 크기 확인 (정상적으로 받았는지 체크)
+                    st.text("다운로드된 폰트 크기:", os.path.getsize(font_path), "bytes")
                     
                     # 워드클라우드 생성
                     text = "안녕하세요 스트림릿 클라우드에서 한글 워드클라우드 테스트 중입니다."
