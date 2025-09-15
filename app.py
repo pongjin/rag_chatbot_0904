@@ -240,7 +240,6 @@ def main():
             
             if has_mindmap_columns:
                 # 기본 정보 메트릭
-                filtered_df = df[df.total_cl != 99]
                 col1, col2 = st.columns(2)
                 with col1:
                     st.metric("전체 응답 수", df.user_id.nunique())
