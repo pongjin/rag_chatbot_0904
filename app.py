@@ -309,7 +309,7 @@ def main():
                 elif msg.type == "ai":
                     try:
                         content = json.loads(msg.content)
-                        st.chat_message("assistant").write(content["answer"])
+                        st.chat_message("ai").write(content["answer"])
             
                         if content.get("context"):
                             with st.expander("참고 문서 확인", expanded=False):
@@ -328,12 +328,22 @@ def main():
                 #st.chat_message("human").write(prompt_message)
                 #with st.chat_message("ai"):
                 with st.spinner("생각 중입니다..."):
-            
+
+                    # 사용자 메시지 먼저 추가
+                    chat_history.add_user_message(prompt_message)
+                    
+                    # 기본 rag_chain 사용 (자동 히스토리 저장 없음)
+                    response = rag_chain.invoke({"input": prompt_message, "history": chat_history.messages})
+                    
+                    answer = response['answer']
+
+                    '''
                     response = conversational_rag_chain.invoke(
                         {"input": prompt_message},
                         config,
                     )
                     answer = response['answer']
+                    '''
         
                     # Document 객체를 직렬화 가능한 dict로 변환
                     context = []
