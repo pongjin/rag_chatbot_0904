@@ -370,10 +370,22 @@ def main():
         # 샘플 정보 표시
         col1, col2 = st.columns([1, 1])
 
-if st.button("🔄 새로고침 버튼을 누르세요"):
+if st.button("🔄 새로고침 (모든 기록 삭제)"):
+    # 1. Streamlit의 리소스 캐시 초기화
     st.cache_resource.clear()
-    shutil.rmtree(os.path.join(tempfile.gettempdir(), "chroma_db_user"), ignore_errors=True)
-    st.success("초기화 완료")
+
+    # 2. 디스크에 저장된 ChromaDB 파일 삭제
+    # 경로가 존재하는지 확인 후 삭제하는 것이 더 안전합니다.
+    chroma_db_path = os.path.join(tempfile.gettempdir(), "chroma_db_user")
+    if os.path.exists(chroma_db_path):
+        shutil.rmtree(chroma_db_path, ignore_errors=True)
+
+    # 3. 세션 상태(채팅 기록 등) 완전 초기화
+    # st.session_state의 모든 키를 순회하며 삭제합니다.
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+
+    st.success("✅ 모든 캐시와 채팅 기록이 초기화되었습니다!")
     st.rerun()
 
 if __name__ == "__main__":
