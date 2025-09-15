@@ -321,30 +321,47 @@ def main():
                 st.chat_message("human").write(prompt_message)
                 with st.chat_message("ai"):
                     with st.spinner("생각 중입니다..."):
-
+            
                         response = conversational_rag_chain.invoke(
                             {"input": prompt_message},
                             config,
                         )
                         answer = response['answer']
-                        st.write(answer)
-
+            
+                        # 참고 문서 조건부 저장
+                        context = []
                         if "관련된 내용이 없습니다" not in answer and response.get("context"):
-                            with st.expander("참고 문서 확인"):
+                            context = response["context"]
+            
+                        chat_history.add_ai_message({
+                            "answer": answer,
+                            "context": context
+                        })
+            
+            # 히스토리 출력
+            for msg in chat_history.messages:
+                if msg.type == "human":
+                    st.chat_message("human").write(msg.content)
+                elif msg.type == "ai":
+                    if isinstance(msg.content, dict):
+                        st.chat_message("ai").write(msg.content["answer"])
+                        
+                        # 조건부 출력
+                        if msg.content.get("context"):
+                            with st.expander("참고 문서 확인", expanded=False):
                                 seen = set()
-                                for doc in response['context']:
+                                for doc in msg.content["context"]:
                                     key = (doc.metadata.get("source"), doc.page_content)
                                     if key in seen:
                                         continue
                                     seen.add(key)
-                                
                                     source = doc.metadata.get('source', '알 수 없음')
                                     raw_ans = doc.metadata.get('ans', '알 수 없음')
-                                    #score = doc.metadata.get('score', None)
                                     source_filename = os.path.basename(source)
-                                
                                     st.markdown(f"👤 {source_filename}")
                                     st.html(raw_ans)
+                    else:
+                        st.chat_message("ai").write(msg.content)
 
         except Exception as e:
             st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
