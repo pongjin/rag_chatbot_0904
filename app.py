@@ -19,14 +19,18 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories.streamlit import StreamlitChatMessageHistory
 from langchain_core.runnables import RunnableMap
-
-from sentence_transformers import SentenceTransformer
 from langchain_core.embeddings import Embeddings
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import FakeEmbeddings
+from typing import List, Sequence
+from sentence_transformers import SentenceTransformer
 
 import hashlib
 import shutil
 
-from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from langchain.retrievers import BM25Retriever, EnsembleRetriever, ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import CrossEncoderReranker
 
 from langchain.schema import Document
 from langchain_core.runnables import Runnable
@@ -45,6 +49,9 @@ sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 from langchain_chroma import Chroma   # ✅ Chroma import
 os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
+
+
+st.set_page_config(page_title="RAG Chatbot", page_icon="🧠", layout="wide")
 
 # CSV 로딩 → 유저 단위로 문서 생성
 @st.cache_resource
@@ -128,13 +135,10 @@ def tokenize(text):
 def initialize_components(file_path: str, selected_model: str, cache_buster: str):
     vectorstore, split_docs = create_vector_store(file_path, cache_buster)
 
-    # BM25Retriever를 위한 텍스트 추출
-    unique_docs = [doc.page_content for doc in split_docs]
-
     # BM25Retriever 생성 (원문 유지 + tokenizer 지정)
-    bm25_retriever = BM25Retriever.from_texts(
-        texts=unique_docs,              # 원문 그대로 넣음
-        preprocess_func=tokenize        # 검색 시에만 토큰화 적용
+    bm25_retriever = BM25Retriever.from_documents(
+        documents=split_docs,         # Document 객체 리스트를 직접 전달
+        preprocess_func=tokenize
     )
     bm25_retriever.k = 20  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
@@ -146,30 +150,49 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
         retrievers=[bm25_retriever, chroma_retriever],
         weights=[0.2, 0.8],  # BM25: 20%, Chroma: 80%
     )
+
+    # --- 위에서 정의한 커스텀 클래스 ---
+    class CrossEncoderRerankerWithScore(CrossEncoderReranker):
+        """점수를 메타데이터에 추가하는 CrossEncoderReranker"""
+        def compress_documents(
+            self, documents: Sequence[Document], query: str, callbacks=None
+        ) -> Sequence[Document]:
+            if not documents: return []
+            doc_list = [doc.page_content for doc in documents]
+            _scores = self.model.score(list(zip([query] * len(doc_list), doc_list)))
+            docs_with_scores = sorted(zip(documents, _scores), key=lambda x: x[1], reverse=True)
+
+            result = []
+            for doc, score in docs_with_scores[: self.top_n]:
+                # 👇 [수정] 점수가 0.0010을 넘는 문서만 결과에 추가하도록 수정
+                if score > 0.0005:
+                    doc.metadata["relevance_score"] = score
+                    result.append(doc)
+            return result
+
+    model = HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko")
+    compressor = CrossEncoderRerankerWithScore(model=model, top_n=40)
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=ensemble_retriever
+    )
     
-    contextualize_q_prompt = ChatPromptTemplate.from_messages([
-        ("system", "이전 대화 내용을 반영해 현재 질문을 독립형 질문으로 바꿔줘."),
-        MessagesPlaceholder("history"),
-        ("human", "{input}"),
-    ])
     qa_prompt = ChatPromptTemplate.from_messages([
         ("system", "다음 문서 내용을 참고하여 질문에 무조건 한국어로 답변해줘. 문서와 유사한 내용이 없으면 무조건 '관련된 내용이 없습니다'라고 말해줘. 꼭 이모지 써줘! 참고 문서는 아래에 보여줄 거야.\n\n{context}"),
-        MessagesPlaceholder("history"),
         ("human", "{input}"),
     ])
     llm = ChatOpenAI(model=selected_model)
-    history_aware_retriever = create_history_aware_retriever(llm, ensemble_retriever, contextualize_q_prompt)
+
+    # retriever가 바로 문서 내용을 {context}에 채워주는 역할을 합니다.
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+    # [수정] history_aware_retriever 대신 준비된 compression_retriever를 직접 연결합니다.
+    rag_chain = create_retrieval_chain(compression_retriever, question_answer_chain)
 
     return rag_chain
 
+
+
 def main():
-    st.set_page_config(
-        page_title="RAG Chatbot",
-        page_icon="🧠",
-        layout="wide"
-    )
 
     st.title("🧠 RAG 질의응답")
     st.subheader("설문 응답을 의미 단위로 분리한뒤(semantic chuncking) 키워드를 도출하고, 이를 활용하여 분석을 진행합니다.")
@@ -203,19 +226,17 @@ def main():
             if has_mindmap_columns:
                 # 기본 정보 메트릭
                 filtered_df = df[df.total_cl != 99]
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("전체 응답 수", df[df.total_cl != 99].user_id.nunique())
+                    st.metric("전체 응답 수", df.user_id.nunique())
                 with col2:
                     st.metric("전체 청크 수", len(df))
-                with col3:
-                    st.metric("키워드 분류 청크 수", len(filtered_df))
 
             if has_mindmap_columns:
                 # Summary Table (4단계 구조)
                 st.subheader("📋 키워드 미분류 청크")
                 st.text("키워드로 분류되지 않은 청크들을 확인할 수 있습니다.(테이블 우측 상단 다운로드 가능)")
-                no_filtered_df = df[df.total_cl == 99][["user_id","SPLITTED"]]
+                no_filtered_df = df[["user_id","SPLITTED"]]
                 st.dataframe(
                     no_filtered_df.set_index("user_id"),
                     use_container_width=True,
