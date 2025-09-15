@@ -265,15 +265,14 @@ def main():
                     wc = WordCloud(
                         font_path=font_path, 
                         background_color="white", 
-                        width=200, 
+                        width=300, 
                         height=200
                     ).generate_from_frequencies(dict(zip(top10['keyword'], top10['user_id'])))
                     
                     # 시각화
-                    fig, ax = plt.subplots(figsize=(10, 10))
+                    fig, ax = plt.subplots(figsize=(3, 2))
                     ax.imshow(wc, interpolation='bilinear')
                     ax.axis('off')
-                    
                     st.pyplot(fig)
 
             if has_mindmap_columns:
