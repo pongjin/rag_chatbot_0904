@@ -8,6 +8,9 @@ import pandas as pd
 import json
 import numpy as np
 import sys
+import requests
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 # RAG 관련 imports
 from langchain_core.documents import Document
@@ -254,11 +257,6 @@ def main():
                 col1, col2 = st.columns([4, 1])  # 왼쪽이 3배 넓게
                 
                 with col1:
-                    import matplotlib.font_manager as fm
-
-                    # 사용 가능한 폰트 리스트 출력
-                    for f in fm.fontManager.ttflist:
-                        st.text(f.name)
                     st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
                     no_filtered_df = df[["user_id","SPLITTED"]]
                     st.dataframe(
@@ -267,8 +265,22 @@ def main():
                     )
                 
                 with col2:
-                    st.text("주로 등장하는 키워드")
-                    st.dataframe(top10)
+                    # Noto Sans KR (Google Fonts) 다운로드
+                    url = "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR-Regular.otf"
+                    font_path = "NotoSansKR-Regular.otf"
+                    
+                    if not os.path.exists(font_path):
+                        r = requests.get(url)
+                        with open(font_path, "wb") as f:
+                            f.write(r.content)
+                    
+                    # 워드클라우드 생성
+                    text = "안녕하세요 스트림릿 클라우드에서 한글 워드클라우드 테스트 중입니다."
+                    wc = WordCloud(font_path=font_path, background_color="white", width=800, height=400).generate(text)
+                    
+                    plt.imshow(wc, interpolation="bilinear")
+                    plt.axis("off")
+                    plt.show()
 
             
             st.subheader("🤖 RAG 질의응답")
