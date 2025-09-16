@@ -248,8 +248,8 @@ def main():
                     st.metric("전체 청크 수", len(df))
                 with col3:
                     # 상위 10개 키워드 추출
-                    df_no_space = df['keyword'].apply(lambda x: x.replace(' ',''))
-                    df_cnt = pd.DataFrame(df_no_space.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
+                    df['clean_keyword'] = df['keyword'].apply(lambda x: x.replace(' ',''))
+                    df_cnt = pd.DataFrame(df.groupby('clean_keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
                     top10 = df_cnt[df_cnt.keyword != '없음'].head(10)
                     # Noto Sans KR (TTF 버전) 다운로드
                     url = "https://github.com/moonspam/NanumSquare/raw/master/NanumSquareR.ttf"
