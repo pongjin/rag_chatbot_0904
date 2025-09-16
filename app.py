@@ -206,7 +206,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
 
 def main():
 
-    st.title("🧠 RAG 질의응답")
+    st.title("🧠 주관식 데이터 검색기")
     st.subheader("설문 응답을 의미 단위로 분리한뒤(semantic chuncking) 키워드를 도출하고, 이를 활용하여 분석을 진행합니다.")
     st.text("예시) 유저A: '그래픽은 좋지만 사운드는 별로입니다' -> 유저A는 '그래픽은 좋다' 와 '사운드는 별로다' 두 가지 주제를 얘기하고 있습니다. LLM을 활용하여 이를 의미 단위로 분리(이하 '청크')하는 전처리를 진행하였습니다.")
     st.markdown("---")
@@ -243,9 +243,9 @@ def main():
                 # 기본 정보 메트릭
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.metric("전체 응답 수", df.user_id.nunique())
+                    st.metric("전체 응답 수(불성실 제외)", df[df.keyword != '없음'].user_id.nunique())
                 with col2:
-                    st.metric("전체 청크 수", len(df))
+                    st.metric("전체 청크 수(불성실 제외)", len(df[df.keyword != '없음']))
                 with col3:
                     # 상위 10개 키워드 추출
                     df['clean_keyword'] = df['keyword'].apply(lambda x: x.replace(' ',''))
