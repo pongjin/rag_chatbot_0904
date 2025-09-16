@@ -268,7 +268,7 @@ def main():
                         background_color="white", 
                         width=200, 
                         height=100
-                    ).generate_from_frequencies(dict(zip(top10['keyword'], top10['user_id'])))
+                    ).generate_from_frequencies(dict(zip(top10['clean_keyword'], top10['user_id'])))
                     
                     # 시각화
                     fig, ax = plt.subplots(figsize=(2, 1))
