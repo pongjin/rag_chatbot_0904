@@ -248,7 +248,8 @@ def main():
                     st.metric("전체 청크 수", len(df))
                 with col3:
                     # 상위 10개 키워드 추출
-                    df_cnt = pd.DataFrame(df.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
+                    df_no_space = df['keyword'].apply(lambda x: x.replace(' ',''))
+                    df_cnt = pd.DataFrame(df_no_space.groupby('keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
                     top10 = df_cnt[df_cnt.keyword != '없음'].head(10)
                     # Noto Sans KR (TTF 버전) 다운로드
                     url = "https://github.com/moonspam/NanumSquare/raw/master/NanumSquareR.ttf"
@@ -278,8 +279,8 @@ def main():
             if has_mindmap_columns:
 
                 st.subheader("📋 전체 청크")
-                st.text("전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
-                no_filtered_df = df[["user_id","SPLITTED"]]
+                st.text("불성실 응답을 제외한 전체 청크들을 확인할 수 있습니다.(테이블 우측 상단 내 검색 및 다운로드 가능)")
+                no_filtered_df = df[df.SPLITTED != '없음'][["user_id","SPLITTED"]]
                 st.dataframe(
                     no_filtered_df.set_index("user_id"),
                     use_container_width=True,
