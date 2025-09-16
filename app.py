@@ -250,7 +250,7 @@ def main():
                     # 상위 10개 키워드 추출
                     df['clean_keyword'] = df['keyword'].apply(lambda x: x.replace(' ',''))
                     df_cnt = pd.DataFrame(df.groupby('clean_keyword').user_id.nunique().sort_values(ascending= False)).reset_index()
-                    top10 = df_cnt[df_cnt.keyword != '없음'].head(10)
+                    top10 = df_cnt[df_cnt.clean_keyword != '없음'].head(10)
                     # Noto Sans KR (TTF 버전) 다운로드
                     url = "https://github.com/moonspam/NanumSquare/raw/master/NanumSquareR.ttf"
                     font_path = "NanumSquare.ttf"
