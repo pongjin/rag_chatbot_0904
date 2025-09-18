@@ -129,17 +129,17 @@ def create_vector_store(file_path: str, cache_buster: str):
 
 
 # BM25 용 한국어 토크나이저
-#@st.cache_resource
-#def get_kiwi():
-#    return Kiwi()
+@st.cache_resource
+def get_kiwi():
+    return Kiwi()
 
-#kiwi = get_kiwi()
+kiwi = get_kiwi()
 
 # Kiwi로 형태소만 추출하는 함수
-#def tokenize(text):
-#    # 첫 번째 분석 결과에서 형태소만 추출
-#    result = kiwi.analyze(text)[0][0]
-#    return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
+def tokenize(text):
+    # 첫 번째 분석 결과에서 형태소만 추출
+    result = kiwi.analyze(text)[0][0]
+    return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
 
 
 # RAG 체인 초기화
@@ -150,7 +150,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
     # BM25Retriever 생성 (원문 유지 + tokenizer 지정)
     bm25_retriever = BM25Retriever.from_documents(
         documents=split_docs,         # Document 객체 리스트를 직접 전달
-        #preprocess_func=tokenize
+        preprocess_func=tokenize
     )
     bm25_retriever.k = 15  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
@@ -177,14 +177,14 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
             result = []
             for doc, score in docs_with_scores[: self.top_n]:
                 # 👇 [수정] 점수가 0.0010을 넘는 문서만 결과에 추가하도록 수정
-                if score > 0.01:
+                if score > 0.0:
                     doc.metadata["relevance_score"] = score
                     result.append(doc)
             return result
 
     @st.cache_resource
     def get_cross_encoder():
-        return HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko") #cross-encoder/ms-marco-MiniLM-L6-v2 
+        return HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L6-v2 ") #cross-encoder/ms-marco-MiniLM-L6-v2  dragonkue/bge-reranker-v2-m3-ko
     
     model = get_cross_encoder()
     compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
