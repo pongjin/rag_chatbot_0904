@@ -97,7 +97,7 @@ def get_embedder():
             # 단일 쿼리 인코딩
             return self.model.encode(text, normalize_embeddings=True).tolist()
 
-    return STEmbedding("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2") #"dragonkue/snowflake-arctic-embed-l-v2.0-ko"
+    return STEmbedding("dragonkue/snowflake-arctic-embed-l-v2.0-ko") #sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 
 # 벡터스토어 생성
 @st.cache_resource
