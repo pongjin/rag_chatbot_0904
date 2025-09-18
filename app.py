@@ -148,10 +148,10 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
         documents=split_docs,         # Document 객체 리스트를 직접 전달
         preprocess_func=tokenize
     )
-    bm25_retriever.k = 15  # BM25Retriever의 검색 결과 개수를 20으로 설정
+    bm25_retriever.k = 10  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
     # Chroma retriever 생성
-    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
+    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
     
     # 앙상블 retriever 초기화
     ensemble_retriever = EnsembleRetriever(
@@ -183,7 +183,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
         return HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko")
     
     model = get_cross_encoder()
-    compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
+    compressor = CrossEncoderRerankerWithScore(model=model, top_n=20)
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=ensemble_retriever
     )
