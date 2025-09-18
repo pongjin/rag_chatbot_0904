@@ -97,52 +97,11 @@ def get_embedder():
             # 단일 쿼리 인코딩
             return self.model.encode(text, normalize_embeddings=True).tolist()
 
-    return STEmbedding("dragonkue/snowflake-arctic-embed-l-v2.0-ko")
+    return STEmbedding("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2") #"dragonkue/snowflake-arctic-embed-l-v2.0-ko"
 
 # 벡터스토어 생성
 @st.cache_resource
 def create_vector_store(file_path: str, cache_buster: str):
-    try:
-        import psutil
-        if psutil.virtual_memory().available < 500 * 1024 * 1024:  # 500MB 미만
-            st.warning("메모리가 부족합니다. 더 작은 데이터셋을 사용하세요.")
-            
-        docs = load_csv_and_create_docs(file_path, cache_buster)
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-        split_docs = text_splitter.split_documents(docs)
-    
-        file_hash = os.path.splitext(os.path.basename(file_path))[0]
-        collection_name = f"coll_{file_hash}_{cache_buster}"
-        #collection_name = f"coll_{file_hash}"
-    
-        # 쓰기 가능한 루트 (예: /tmp)
-        persist_root = os.path.join(tempfile.gettempdir(), "chroma_db_user")
-        persist_dir = os.path.join(persist_root, collection_name)
-    
-        # 폴더 깨끗하게 재생성
-        shutil.rmtree(persist_dir, ignore_errors=True)
-        os.makedirs(persist_dir, exist_ok=True)
-    
-        embeddings = get_embedder()
-        vectorstore = Chroma.from_documents(
-            split_docs,
-            embeddings,
-            collection_name=collection_name,
-            persist_directory= None,
-        )
-
-        # 메모리 사용량 체크
-        import psutil
-        if psutil.virtual_memory().available < 500 * 1024 * 1024:  # 500MB 미만
-            st.warning("메모리가 부족합니다. 더 작은 데이터셋을 사용하세요.")
-
-        return vectorstore, split_docs  # split_docs도 함께 반환
-    
-    except Exception as e:
-        st.error(f"벡터 저장소 생성 실패: {str(e)}")
-        st.info("더 작은 데이터셋을 시도하거나 로컬에서 실행하세요.")
-        raise e
-    """
     docs = load_csv_and_create_docs(file_path, cache_buster)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     split_docs = text_splitter.split_documents(docs)
@@ -167,8 +126,8 @@ def create_vector_store(file_path: str, cache_buster: str):
         persist_directory=persist_dir, #None,
     )
     return vectorstore, split_docs  # split_docs도 함께 반환
-    """
 
+"""
 # BM25 용 한국어 토크나이저
 @st.cache_resource
 def get_kiwi():
@@ -181,6 +140,7 @@ def tokenize(text):
     # 첫 번째 분석 결과에서 형태소만 추출
     result = kiwi.analyze(text)[0][0]
     return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
+"""
 
 # RAG 체인 초기화
 @st.cache_resource
@@ -190,7 +150,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
     # BM25Retriever 생성 (원문 유지 + tokenizer 지정)
     bm25_retriever = BM25Retriever.from_documents(
         documents=split_docs,         # Document 객체 리스트를 직접 전달
-        preprocess_func=tokenize
+        #preprocess_func=tokenize
     )
     bm25_retriever.k = 15  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
@@ -224,7 +184,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
 
     @st.cache_resource
     def get_cross_encoder():
-        return HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko")
+        return HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2-multilingual") #dragonkue/bge-reranker-v2-m3-ko
     
     model = get_cross_encoder()
     compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
