@@ -106,7 +106,8 @@ def create_vector_store(file_path: str, cache_buster: str):
     split_docs = text_splitter.split_documents(docs)
 
     file_hash = os.path.splitext(os.path.basename(file_path))[0]
-    collection_name = f"coll_{file_hash}"
+    collection_name = f"coll_{file_hash}_{cache_buster}"
+    #collection_name = f"coll_{file_hash}"
 
     # 쓰기 가능한 루트 (예: /tmp)
     persist_root = os.path.join(tempfile.gettempdir(), "chroma_db_user")
@@ -121,7 +122,7 @@ def create_vector_store(file_path: str, cache_buster: str):
         split_docs,
         embeddings,
         collection_name=collection_name,
-        persist_directory=None,
+        persist_directory=persist_dir, #None,
     )
     return vectorstore, split_docs  # split_docs도 함께 반환
 
@@ -148,10 +149,10 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
         documents=split_docs,         # Document 객체 리스트를 직접 전달
         preprocess_func=tokenize
     )
-    bm25_retriever.k = 10  # BM25Retriever의 검색 결과 개수를 20으로 설정
+    bm25_retriever.k = 15  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
     # Chroma retriever 생성
-    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+    chroma_retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
     
     # 앙상블 retriever 초기화
     ensemble_retriever = EnsembleRetriever(
@@ -183,7 +184,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
         return HuggingFaceCrossEncoder(model_name="dragonkue/bge-reranker-v2-m3-ko")
     
     model = get_cross_encoder()
-    compressor = CrossEncoderRerankerWithScore(model=model, top_n=20)
+    compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=ensemble_retriever
     )
