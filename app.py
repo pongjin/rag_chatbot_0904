@@ -130,12 +130,14 @@ def create_vector_store(file_path: str, cache_buster: str):
             collection_name=collection_name,
             persist_directory=persist_dir, #None,
         )
-        
+
         # 메모리 사용량 체크
         import psutil
         if psutil.virtual_memory().available < 500 * 1024 * 1024:  # 500MB 미만
             st.warning("메모리가 부족합니다. 더 작은 데이터셋을 사용하세요.")
-            
+
+        return vectorstore, split_docs  # split_docs도 함께 반환
+    
     except Exception as e:
         st.error(f"벡터 저장소 생성 실패: {str(e)}")
         st.info("더 작은 데이터셋을 시도하거나 로컬에서 실행하세요.")
