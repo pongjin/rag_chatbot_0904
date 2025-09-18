@@ -109,27 +109,27 @@ def create_vector_store(file_path: str, cache_buster: str):
             
         docs = load_csv_and_create_docs(file_path, cache_buster)
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-            split_docs = text_splitter.split_documents(docs)
-        
-            file_hash = os.path.splitext(os.path.basename(file_path))[0]
-            collection_name = f"coll_{file_hash}_{cache_buster}"
-            #collection_name = f"coll_{file_hash}"
-        
-            # 쓰기 가능한 루트 (예: /tmp)
-            persist_root = os.path.join(tempfile.gettempdir(), "chroma_db_user")
-            persist_dir = os.path.join(persist_root, collection_name)
-        
-            # 폴더 깨끗하게 재생성
-            shutil.rmtree(persist_dir, ignore_errors=True)
-            os.makedirs(persist_dir, exist_ok=True)
-        
-            embeddings = get_embedder()
-            vectorstore = Chroma.from_documents(
-                split_docs,
-                embeddings,
-                collection_name=collection_name,
-                persist_directory=persist_dir, #None,
-            )
+        split_docs = text_splitter.split_documents(docs)
+    
+        file_hash = os.path.splitext(os.path.basename(file_path))[0]
+        collection_name = f"coll_{file_hash}_{cache_buster}"
+        #collection_name = f"coll_{file_hash}"
+    
+        # 쓰기 가능한 루트 (예: /tmp)
+        persist_root = os.path.join(tempfile.gettempdir(), "chroma_db_user")
+        persist_dir = os.path.join(persist_root, collection_name)
+    
+        # 폴더 깨끗하게 재생성
+        shutil.rmtree(persist_dir, ignore_errors=True)
+        os.makedirs(persist_dir, exist_ok=True)
+    
+        embeddings = get_embedder()
+        vectorstore = Chroma.from_documents(
+            split_docs,
+            embeddings,
+            collection_name=collection_name,
+            persist_directory=persist_dir, #None,
+        )
         
         # 메모리 사용량 체크
         import psutil
