@@ -48,7 +48,7 @@ def get_file_hash(uploaded_file):
     return hashlib.md5(file_content).hexdigest()
 
 # pysqlite3 패치
-__import__('pysqlite3')
+#__import__('pysqlite3')
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 from langchain_chroma import Chroma   # ✅ Chroma import
