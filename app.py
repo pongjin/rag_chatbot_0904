@@ -184,7 +184,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
 
     @st.cache_resource
     def get_cross_encoder():
-        return HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L6-v2 ") #cross-encoder/ms-marco-MiniLM-L6-v2  dragonkue/bge-reranker-v2-m3-ko
+        return HuggingFaceCrossEncoder(model_name="Dongjin-kr/ko-reranker") #  dragonkue/bge-reranker-v2-m3-ko
     
     model = get_cross_encoder()
     compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
