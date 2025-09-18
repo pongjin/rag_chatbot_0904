@@ -32,7 +32,8 @@ from sentence_transformers import SentenceTransformer
 import hashlib
 import shutil
 
-from langchain.retrievers import BM25Retriever, EnsembleRetriever, ContextualCompressionRetriever
+from langchain_community.retrievers import BM25Retriever
+from langchain.retrievers import EnsembleRetriever, ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 
 from langchain.schema import Document
@@ -47,8 +48,8 @@ def get_file_hash(uploaded_file):
     return hashlib.md5(file_content).hexdigest()
 
 # pysqlite3 패치
-__import__('pysqlite3')
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+#__import__('pysqlite3')
+#sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 from langchain_chroma import Chroma   # ✅ Chroma import
 os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
