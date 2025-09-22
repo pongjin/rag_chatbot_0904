@@ -130,17 +130,17 @@ def create_vector_store(file_path: str, cache_buster: str):
 
 # BM25 용 한국어 토크나이저
 
-@st.cache_resource
-def get_kiwi():
-    return Kiwi()
+#@st.cache_resource
+#def get_kiwi():
+#    return Kiwi()
 
-kiwi = get_kiwi()
+#kiwi = get_kiwi()
 
 # Kiwi로 형태소만 추출하는 함수
-def tokenize(text):
+#def tokenize(text):
     # 첫 번째 분석 결과에서 형태소만 추출
-    result = kiwi.analyze(text)[0][0]
-    return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
+#    result = kiwi.analyze(text)[0][0]
+#    return [morph for morph, pos, start, length in result if pos.startswith(("NN", "VV", "VA"))]
 
 
 # RAG 체인 초기화
@@ -151,7 +151,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
     # BM25Retriever 생성 (원문 유지 + tokenizer 지정)
     bm25_retriever = BM25Retriever.from_documents(
         documents=split_docs,         # Document 객체 리스트를 직접 전달
-        preprocess_func=tokenize
+        #preprocess_func=tokenize
     )
     bm25_retriever.k = 15  # BM25Retriever의 검색 결과 개수를 20으로 설정
 
@@ -183,15 +183,15 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
                     result.append(doc)
             return result
     
-    @st.cache_resource
-    def get_cross_encoder():
-        return HuggingFaceCrossEncoder(model_name="Dongjin-kr/ko-reranker") #  dragonkue/bge-reranker-v2-m3-ko
+    #@st.cache_resource
+    #def get_cross_encoder():
+    #    return HuggingFaceCrossEncoder(model_name="Dongjin-kr/ko-reranker") #  dragonkue/bge-reranker-v2-m3-ko
     
-    model = get_cross_encoder()
-    compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
-    compression_retriever = ContextualCompressionRetriever(
-        base_compressor=compressor, base_retriever=ensemble_retriever
-    )
+    #model = get_cross_encoder()
+    #compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
+    #compression_retriever = ContextualCompressionRetriever(
+    #    base_compressor=compressor, base_retriever=ensemble_retriever
+    #)
     
     qa_prompt = ChatPromptTemplate.from_messages([
         ("system", "다음 문서 내용을 참고하여 질문에 무조건 한국어로 답변해줘. 문서와 유사한 내용이 없으면 무조건 '관련된 내용이 없습니다'라고 말해줘. 꼭 이모지 써줘! 참고 문서는 아래에 보여줄 거야.\n\n{context}"),
