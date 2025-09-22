@@ -183,15 +183,15 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
                     result.append(doc)
             return result
     
-    #@st.cache_resource
-    #def get_cross_encoder():
-    #    return HuggingFaceCrossEncoder(model_name="Dongjin-kr/ko-reranker") #  dragonkue/bge-reranker-v2-m3-ko
+    @st.cache_resource
+    def get_cross_encoder():
+        return HuggingFaceCrossEncoder(model_name="Dongjin-kr/ko-reranker") #  dragonkue/bge-reranker-v2-m3-ko
     
-    #model = get_cross_encoder()
-    #compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
-    #compression_retriever = ContextualCompressionRetriever(
-    #    base_compressor=compressor, base_retriever=ensemble_retriever
-    #)
+    model = get_cross_encoder()
+    compressor = CrossEncoderRerankerWithScore(model=model, top_n=30)
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=ensemble_retriever
+    )
     
     qa_prompt = ChatPromptTemplate.from_messages([
         ("system", "다음 문서 내용을 참고하여 질문에 무조건 한국어로 답변해줘. 문서와 유사한 내용이 없으면 무조건 '관련된 내용이 없습니다'라고 말해줘. 꼭 이모지 써줘! 참고 문서는 아래에 보여줄 거야.\n\n{context}"),
