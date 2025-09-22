@@ -212,7 +212,7 @@ def initialize_components(file_path: str, selected_model: str, cache_buster: str
 
 def main():
 
-    st.title("🧠 주관식 데이터 검색기")
+    st.title("🧠 주관식 데이터 검색기(메모리 이슈로 인해 기능 구현만 임시로 해둔 상태입니다) ")
     st.subheader("설문 응답을 의미 단위로 분리한뒤(semantic chuncking) 키워드를 도출하고, 이를 활용하여 분석을 진행합니다.")
     st.text("예시) 유저A: '그래픽은 좋지만 사운드는 별로입니다' -> 유저A는 '그래픽은 좋다' 와 '사운드는 별로다' 두 가지 주제를 얘기하고 있습니다. LLM을 활용하여 이를 의미 단위로 분리(이하 '청크')하는 전처리를 진행하였습니다.")
     st.markdown("---")
